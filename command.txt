@@ -1,0 +1,3 @@
+python ./pytorchyolo/train.py --data config/coco.data  --pretrained_weights weights/darknet53.conv.74
+python ./pytorchyolo/detect.py --images data/samples/
+python ./pytorchyolo/test.py --weights weights/yolov3.weights
