@@ -81,10 +81,11 @@ class Train(Top):
         parser.add_argument("--logdir", type=str, default="logs", help="Directory for training log files (e.g. for TensorBoard)")
         parser.add_argument("--seed", type=int, default=-1, help="Makes results reproducable. Set -1 to disable.")
         
-        return parser.parse_args()
+        return parser
 
-    def run(self,args):
-         
+    def run(self,parser):
+        args = parser.parse_args()
+
         print(f"Command line arguments: {args}")
 
         if args.seed != -1:
