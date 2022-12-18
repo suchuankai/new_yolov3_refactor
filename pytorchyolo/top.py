@@ -11,7 +11,7 @@ class Top(ABC):
         pass
 
     @abstractmethod
-    def start(self):
+    def init_parameters(self):
         pass
 
     
