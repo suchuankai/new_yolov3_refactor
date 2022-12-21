@@ -9,15 +9,10 @@ class TestOptions(BaseOptions):
 
     def initialize(self, parser):
         parser = BaseOptions.initialize(self, parser)  # define shared options
-        parser.add_argument('--results_dir', type=str, default='./results/', help='saves results here.')
-        parser.add_argument('--aspect_ratio', type=float, default=1.0, help='aspect ratio of result images')
-        parser.add_argument('--phase', type=str, default='test', help='train, val, test, etc')
-        # Dropout and Batchnorm has different behavioir during training and test.
-        parser.add_argument('--eval', action='store_true', help='use eval mode during test time.')
-        parser.add_argument('--num_test', type=int, default=50, help='how many test images to run')
-        # rewrite devalue values
-        parser.set_defaults(model='test')
-        # To avoid cropping, the load_size should be the same as crop_size
-        parser.set_defaults(load_size=parser.get_default('crop_size'))
-        self.isTrain = False
+        parser.add_argument("-w", "--weights", type=str, default="weights/yolov3.weights", help="Path to weights or checkpoint file (.weights or .pth)")
+        parser.add_argument("-d", "--data", type=str, default="config/coco.data", help="Path to data config file (.data)")
+        parser.add_argument("-b", "--batch_size", type=int, default=8, help="Size of each image batch")
+        parser.add_argument("-v", "--verbose", action='store_true', help="Makes the validation more verbose")
+        parser.add_argument("--img_size", type=int, default=416, help="Size of each image dimension for yolo")
+        parser.add_argument("--iou_thres", type=float, default=0.5, help="IOU threshold required to qualify as detected")
         return parser

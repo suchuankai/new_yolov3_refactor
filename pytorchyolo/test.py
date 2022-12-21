@@ -17,29 +17,17 @@ from pytorchyolo.utils.utils import load_classes, ap_per_class, get_batch_statis
 from pytorchyolo.utils.datasets import ListDataset
 from pytorchyolo.utils.transforms import DEFAULT_TRANSFORMS
 from pytorchyolo.utils.parse_config import parse_data_config
+from options.test_options import TestOptions
 from top import Top
 
 class Test(Top):
 
     def __init__(self):
-        opt = self.init_parameters()
+        opt = TestOptions().parse()  # get test options
         self.run(opt)
 
     def init_parameters(self):
-        print_environment_info()
-        parser = argparse.ArgumentParser(description="Evaluate validation data.")
-        parser.add_argument("-m", "--model", type=str, default="config/yolov3.cfg", help="Path to model definition file (.cfg)")
-        parser.add_argument("-w", "--weights", type=str, default="weights/yolov3.weights", help="Path to weights or checkpoint file (.weights or .pth)")
-        parser.add_argument("-d", "--data", type=str, default="config/coco.data", help="Path to data config file (.data)")
-        parser.add_argument("-b", "--batch_size", type=int, default=8, help="Size of each image batch")
-        parser.add_argument("-v", "--verbose", action='store_true', help="Makes the validation more verbose")
-        parser.add_argument("--img_size", type=int, default=416, help="Size of each image dimension for yolo")
-        parser.add_argument("--n_cpu", type=int, default=8, help="Number of cpu threads to use during batch generation")
-        parser.add_argument("--iou_thres", type=float, default=0.5, help="IOU threshold required to qualify as detected")
-        parser.add_argument("--conf_thres", type=float, default=0.01, help="Object confidence threshold")
-        parser.add_argument("--nms_thres", type=float, default=0.4, help="IOU threshold for non-maximum suppression")
-
-        return parser
+        pass
 
     def evaluate_model_file(self, model_path, weights_path, img_path, class_names, batch_size=8, img_size=416,
                             n_cpu=8, iou_thres=0.5, conf_thres=0.5, nms_thres=0.5, verbose=True):
