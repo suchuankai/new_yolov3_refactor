@@ -1,11 +1,6 @@
 from .base_options import BaseOptions
 
-
 class DetectOptions(BaseOptions):
-    """This class includes training options.
-
-    It also includes shared options defined in BaseOptions.
-    """
 
     def initialize(self, parser):
         parser = BaseOptions.initialize(self, parser)

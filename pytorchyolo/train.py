@@ -11,17 +11,15 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 
 from pytorchyolo.models import load_model
+
 from pytorchyolo.utils.logger import Logger
 from pytorchyolo.utils.utils import to_cpu, load_classes, print_environment_info, provide_determinism, worker_seed_set
 from pytorchyolo.utils.datasets import ListDataset
 from pytorchyolo.utils.augmentations import AUGMENTATION_TRANSFORMS
-#from pytorchyolo.utils.transforms import DEFAULT_TRANSFORMS
-from pytorchyolo.utils.parse_config import parse_data_config
 from pytorchyolo.utils.loss import compute_loss
-from pytorchyolo.test import _evaluate, _create_validation_data_loader
-
+from pytorchyolo.utils.transforms import DEFAULT_TRANSFORMS
 from terminaltables import AsciiTable
-
+from pytorchyolo.test import _evaluate
 from torchsummary import summary
 
 from top import Top
@@ -33,38 +31,62 @@ class Train(Top):
         opt = TrainOptions().parse()  # get test options
         self.run(opt)
 
-    def _create_data_loader(self,img_path, batch_size, img_size, n_cpu, multiscale_training=False):
-        """Creates a DataLoader for training.
-        :param img_path: Path to file containing all paths to training images.
-        :type img_path: str
-        :param batch_size: Size of each image batch
-        :type batch_size: int
-        :param img_size: Size of each image dimension for yolo
-        :type img_size: int
-        :param n_cpu: Number of cpu threads to use during batch generation
-        :type n_cpu: int
-        :param multiscale_training: Scale images to different sizes randomly
-        :type multiscale_training: bool
-        :return: Returns DataLoader
-        :rtype: DataLoader
-        """
-        dataset = ListDataset(
-            img_path,
-            img_size=img_size,
-            multiscale=multiscale_training,
-            transform=AUGMENTATION_TRANSFORMS)
-        dataloader = DataLoader(
+    def _create_data_loader(self, img_path, batch_size, img_size, n_cpu, multiscale_training=False, mode='train'):
+        
+        if(mode=='train'):
+            dataset = ListDataset(
+                img_path,
+                img_size=img_size,
+                multiscale=multiscale_training,
+                transform=AUGMENTATION_TRANSFORMS)
+            dataloader = DataLoader(
+                dataset,
+                batch_size=batch_size,
+                shuffle=True,
+                num_workers=n_cpu,
+                pin_memory=True,
+                collate_fn=dataset.collate_fn,
+                worker_init_fn=worker_seed_set)
+
+        elif(mode=='valid'):
+            dataset = ListDataset(img_path, img_size=img_size, multiscale=False, transform=DEFAULT_TRANSFORMS)
+            dataloader = DataLoader(
             dataset,
             batch_size=batch_size,
-            shuffle=True,
+            shuffle=False,
             num_workers=n_cpu,
             pin_memory=True,
-            collate_fn=dataset.collate_fn,
-            worker_init_fn=worker_seed_set)
+            collate_fn=dataset.collate_fn)
+
+        else:
+            print("mode error!")
+
         return dataloader
 
     def init_parameters(self):
         pass
+
+    def Create_optimizer(self, model):
+        params = [p for p in model.parameters() if p.requires_grad]
+       
+        if (model.hyperparams['optimizer'] in [None, "adam"]):
+            optimizer = optim.Adam(
+                params,
+                lr=model.hyperparams['learning_rate'],
+                weight_decay=model.hyperparams['decay'],
+            )
+        elif (model.hyperparams['optimizer'] == "sgd"):
+            optimizer = optim.SGD(
+                params,
+                lr=model.hyperparams['learning_rate'],
+                weight_decay=model.hyperparams['decay'],
+                momentum=model.hyperparams['momentum'])
+        else:
+            print("Unknown optimizer. Please choose between (adam, sgd).")
+        return optimizer
+
+    
+
 
     def run(self,parser):
         args = parser.parse_args()
@@ -81,7 +103,7 @@ class Train(Top):
         os.makedirs("checkpoints", exist_ok=True)
 
         # Get data configuration
-        data_config = parse_data_config(args.data)
+        data_config = self.parse_data_config(args.data)
         train_path = data_config["train"]
         valid_path = data_config["valid"]
         class_names = load_classes(data_config["names"])
@@ -109,35 +131,22 @@ class Train(Top):
             mini_batch_size,
             model.hyperparams['height'],
             args.n_cpu,
-            args.multiscale_training)
+            args.multiscale_training,
+            mode='train')
 
         # Load validation dataloader
-        validation_dataloader = _create_validation_data_loader(
+        validation_dataloader = self._create_data_loader(
             valid_path,
             mini_batch_size,
             model.hyperparams['height'],
-            args.n_cpu)
+            args.n_cpu,
+            mode='valid')
 
         # ################
         # Create optimizer
         # ################
-
-        params = [p for p in model.parameters() if p.requires_grad]
-       
-        if (model.hyperparams['optimizer'] in [None, "adam"]):
-            optimizer = optim.Adam(
-                params,
-                lr=model.hyperparams['learning_rate'],
-                weight_decay=model.hyperparams['decay'],
-            )
-        elif (model.hyperparams['optimizer'] == "sgd"):
-            optimizer = optim.SGD(
-                params,
-                lr=model.hyperparams['learning_rate'],
-                weight_decay=model.hyperparams['decay'],
-                momentum=model.hyperparams['momentum'])
-        else:
-            print("Unknown optimizer. Please choose between (adam, sgd).")
+        optimizer = self.Create_optimizer(model)
+        
 
         # skip epoch zero, because then the calculations for when to evaluate/checkpoint makes more intuitive sense
         # e.g. when you stop after 30 epochs and evaluate every 10 epochs then the evaluations happen after: 10,20,30

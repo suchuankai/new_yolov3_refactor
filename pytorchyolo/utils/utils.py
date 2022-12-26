@@ -396,3 +396,6 @@ def print_environment_info():
         print(f"Current Commit Hash: {subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], stderr=subprocess.DEVNULL).decode('ascii').strip()}")
     except (subprocess.CalledProcessError, FileNotFoundError):
         print("No git or repo found")
+
+
+

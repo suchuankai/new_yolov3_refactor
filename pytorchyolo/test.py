@@ -16,7 +16,6 @@ from pytorchyolo.models import load_model
 from pytorchyolo.utils.utils import load_classes, ap_per_class, get_batch_statistics, non_max_suppression, to_cpu, xywh2xyxy, print_environment_info
 from pytorchyolo.utils.datasets import ListDataset
 from pytorchyolo.utils.transforms import DEFAULT_TRANSFORMS
-from pytorchyolo.utils.parse_config import parse_data_config
 from options.test_options import TestOptions
 from top import Top
 
@@ -175,7 +174,7 @@ class Test(Top):
         print(f"Command line arguments: {args}")
 
         # Load configuration from data file
-        data_config = parse_data_config(args.data)
+        data_config = self.parse_data_config(args.data)
         # Path to file containing all images for validation
         valid_path = data_config["valid"]
         class_names = load_classes(data_config["names"])  # List of class names
